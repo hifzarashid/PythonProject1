@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Craveo — Food Marketplace</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background-color: #F8FAFC; color: #0F172A; }
+
+        .navbar { background: #FFFFFF; border-bottom: 1px solid #E2E8F0; padding: 16px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+        .logo { font-size: 24px; font-weight: 800; color: #FF5E2B; }
+        .location-badge { background: #FFF1EC; color: #FF5E2B; padding: 8px 16px; border-radius: 20px; font-weight: 700; font-size: 14px; }
+        .search-bar { width: 35%; background: #F1F5F9; border-radius: 12px; padding: 10px 16px; display: flex; align-items: center; gap: 10px; }
+        .search-bar input { border: none; background: transparent; outline: none; width: 100%; font-size: 14px; font-weight: 600; }
+        .cart-btn { background: #FF5E2B; color: white; padding: 10px 20px; border-radius: 12px; font-weight: 700; border: none; cursor: pointer; }
+
+        .main-layout { max-width: 1300px; margin: 30px auto; padding: 0 20px; }
+        .section-title { font-size: 22px; font-weight: 800; margin: 24px 0 16px; }
+
+        /* Categories Bar */
+        .categories-grid { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 10px; }
+        .cat-chip { background: #FFFFFF; border: 1px solid #E2E8F0; padding: 12px 24px; border-radius: 14px; font-weight: 700; font-size: 14px; cursor: pointer; white-space: nowrap; transition: 0.2s; }
+        .cat-chip:hover, .cat-chip.active { background: #FF5E2B; color: #FFFFFF; border-color: #FF5E2B; box-shadow: 0 4px 12px rgba(255, 94, 43, 0.25); }
+
+        /* Deals Scroll */
+        .deals-scroll { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 10px; }
+        .deal-card { min-width: 280px; background: #1E293B; color: white; padding: 20px; border-radius: 18px; display: flex; flex-direction: column; justify-content: space-between; position: relative; }
+        .deal-badge { background: #FF5E2B; color: white; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; width: fit-content; margin-bottom: 10px; }
+        .deal-title { font-size: 18px; font-weight: 800; }
+        .deal-desc { font-size: 12px; opacity: 0.8; margin: 6px 0 12px; }
+        .deal-price { font-size: 18px; font-weight: 800; color: #4ADE80; }
+
+        /* Food Items Grid */
+        .food-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px; }
+        .food-card { background: #FFFFFF; border-radius: 20px; border: 1px solid #E2E8F0; overflow: hidden; display: flex; flex-direction: column; }
+        .card-img { width: 100%; height: 180px; object-fit: cover; }
+        .card-body { padding: 18px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+        .food-title { font-size: 17px; font-weight: 800; }
+        .food-desc { font-size: 13px; color: #64748B; margin: 6px 0 14px; line-height: 1.4; }
+        .card-footer { display: flex; justify-content: space-between; align-items: center; }
+        .food-price { font-size: 17px; font-weight: 800; color: #0F172A; }
+        .add-btn { background: #FF5E2B; color: white; border: none; padding: 9px 18px; border-radius: 12px; font-weight: 700; cursor: pointer; }
+
+        /* Modal */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; }
+        .modal-box { background: white; width: 420px; border-radius: 20px; padding: 24px; position: relative; }
+        .close-btn { position: absolute; right: 20px; top: 20px; border: none; background: #F1F5F9; width: 32px; height: 32px; border-radius: 50%; font-weight: 800; cursor: pointer; }
+        .option-item { display: flex; justify-content: space-between; padding: 10px; border: 1px solid #E2E8F0; border-radius: 10px; margin-top: 8px; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+    <div class="navbar">
+        <div class="logo">🍕 Craveo</div>
+        <div class="location-badge">📍 Delivering to: Home • Okara</div>
+        <div class="search-bar">
+            <span>🔍</span>
+            <input type="text" placeholder="Search pizza, burgers, pasta or drinks...">
+        </div>
+        <button class="cart-btn" onclick="alert('Opening Cart...')">🛒 Cart (<span id="cartCount">0</span>)</button>
+    </div>
+
+    <div class="main-layout">
+
+        <!-- Dynamic Categories -->
+        <div class="section-title">What are you craving today? 🤤</div>
+        <div class="categories-grid">
+            <button class="cat-chip active" onclick="filterCategory(this, 'All')">🔥 All Items</button>
+            {% for cat in categories %}
+                <button class="cat-chip" onclick="filterCategory(this, '{{ cat }}')">{{ cat }}</button>
+            {% endfor %}
+        </div>
+
+        <!-- Dynamic Hot Deals -->
+        <div class="section-title">🔥 Special Deals & Combos</div>
+        <div class="deals-scroll">
+            {% for deal in deals %}
+            <div class="deal-card">
+                <div>
+                    <div class="deal-badge">{{ deal.badge }}</div>
+                    <div class="deal-title">{{ deal.title }}</div>
+                    <div class="deal-desc">{{ deal.description }}</div>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div class="deal-price">Rs. {{ deal.discount_price }} <span style="text-decoration:line-through; font-size:12px; color:#94A3B8;">Rs. {{ deal.original_price }}</span></div>
+                    <button class="add-btn" onclick="addToCartDirect('{{ deal.title }}')">+ Claim</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Dynamic Food Items -->
+        <div class="section-title">Popular Menu Items ⚡</div>
+        <div class="food-grid">
+            {% for item in items %}
+            <div class="food-card" data-category="{{ item.category }}">
+                <img src="{% if item.category == 'Pizza' %}https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500{% elif item.category == 'Burgers' %}https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500{% elif item.category == 'Pasta' %}https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=500{% elif item.category == 'Drinks' %}https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=500{% elif item.category == 'Desserts' %}https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=500{% else %}https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=500{% endif %}" class="card-img" alt="{{ item.name }}">
+                <div class="card-body">
+                    <div>
+                        <div class="food-title">{{ item.name }}</div>
+                        <div class="food-desc">{{ item.description }}</div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="food-price">Rs. {{ item.base_price }}</div>
+                        {% if item.has_options %}
+                            <button class="add-btn" onclick="openCustomizer('{{ item.name }}', {{ item.base_price }})">+ Customize</button>
+                        {% else %}
+                            <button class="add-btn" onclick="addToCartDirect('{{ item.name }}')">+ Add</button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Customize Modal -->
+    <div id="customModal" class="modal">
+        <div class="modal-box">
+            <button class="close-btn" onclick="closeModal()">✕</button>
+            <h3 id="modalTitle" style="font-size: 20px; font-weight: 800;">Customize Item</h3>
+
+            <div style="margin: 15px 0;">
+                <p style="font-size: 12px; font-weight: 800; color: #64748B;">SELECT SIZE</p>
+                <div class="option-item"><label><input type="radio" name="size" checked> Small / Half</label><span>Base Price</span></div>
+                <div class="option-item"><label><input type="radio" name="size"> Medium (+Rs. 300)</label><span>+Rs. 300</span></div>
+                <div class="option-item"><label><input type="radio" name="size"> Large / Full (+Rs. 500)</label><span>+Rs. 500</span></div>
+            </div>
+
+            <button class="add-btn" style="width: 100%; padding: 12px; margin-top: 10px;" onclick="confirmAddToCart()">Add to Cart 🛒</button>
+        </div>
+    </div>
+
+    <script>
+        let totalCartCount = 0;
+
+        function filterCategory(btnElement, categoryName) {
+            let buttons = document.querySelectorAll('.cat-chip');
+            buttons.forEach(b => b.classList.remove('active'));
+            btnElement.classList.add('active');
+
+            let cards = document.querySelectorAll('.food-card');
+            cards.forEach(card => {
+                let cardCategory = card.getAttribute('data-category');
+                if (categoryName === 'All' || cardCategory === categoryName) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function openCustomizer(itemName, basePrice) {
+            document.getElementById('modalTitle').innerText = 'Customize ' + itemName;
+            document.getElementById('customModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('customModal').style.display = 'none';
+        }
+
+        function confirmAddToCart() {
+            closeModal();
+            totalCartCount++;
+            document.getElementById('cartCount').innerText = totalCartCount;
+            alert('Item added to cart!');
+        }
+
+        function addToCartDirect(itemName) {
+            totalCartCount++;
+            document.getElementById('cartCount').innerText = totalCartCount;
+            alert(itemName + ' added to cart!');
+        }
+    </script>
+</body>
+</html>
